@@ -7,8 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # ВАЖНО: Docker требует, чтобы имена образов были ТОЛЬКО в нижнем регистре.
-  # Замените 'your-github-username' и 'my-app' на свои данные.
   IMAGE_NAME: ghcr.io/gangsterpp/fuzzy-journey
 
 jobs:
