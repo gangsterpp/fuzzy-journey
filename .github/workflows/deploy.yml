@@ -1,0 +1,75 @@
+name: Build and Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  # ВАЖНО: Docker требует, чтобы имена образов были ТОЛЬКО в нижнем регистре.
+  # Замените 'your-github-username' и 'my-app' на свои данные.
+  IMAGE_NAME: ghcr.io/gangsterpp/fuzzy-journey
+
+jobs:
+  # === ЗАДАЧА 1: Сборка и отправка образа в GitHub ===
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Дает право пушить образ в GHCR
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:latest
+
+  # === ЗАДАЧА 2: Деплой на удаленный сервер ===
+  deploy:
+    needs: build # Запускается только после успешной сборки
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.FINLAND_SERVER_HOST }}
+          username: ${{ secrets.FINLAND_SERVER_USER }}
+          password: ${{ secrets.FINLAND_SERVER_PASSWORD }}
+          # Передаем токен GitHub на сервер, чтобы он мог скачать образ
+          envs: GITHUB_TOKEN, BOT_TOKEN, OPENROUTER_API_KEY
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+            OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          script: |
+            # 1. Авторизуемся в GHCR прямо на сервере
+            echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # 2. Скачиваем свежий образ
+            docker pull ${{ env.IMAGE_NAME }}:latest
+            
+            # 3. Останавливаем старый контейнер
+            docker stop my-app-container || true
+            docker rm my-app-container || true
+            
+            # 4. Запускаем новый контейнер
+            docker run -d --name my-app-container \
+              -e TOKEN=$BOT_TOKEN \
+              -e OPENROUTER_API_KEY=$OPENROUTER_API_KEY \
+              ${{ env.IMAGE_NAME }}:latest
+            
+            # 5. Очищаем сервер от старых версий образов (чтобы не забивался диск)
+            docker image prune -af
