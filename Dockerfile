@@ -1,7 +1,9 @@
-# Этап сборки
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
+
+# Разрешаем Go автоматически подтягивать нужную версию toolchain из go.mod, если она новее
+ENV GOTOOLCHAIN=auto
 
 # Устанавливаем зависимости
 COPY go.mod go.sum ./
