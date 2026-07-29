@@ -10,9 +10,9 @@ env:
   IMAGE_NAME: ghcr.io/gangsterpp/fuzzy-journey
 
 jobs:
-  # === ЗАДАЧА 1: Сборка и отправка образа в GitHub ===
   build:
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
       packages: write
@@ -35,29 +35,47 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_NAME }}:latest
 
-  # === ЗАДАЧА 2: Деплой на удаленный сервер ===
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: read
+
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
         with:
           host: ${{ secrets.FINLAND_SERVER_HOST }}
           username: ${{ secrets.FINLAND_SERVER_USER }}
           password: ${{ secrets.FINLAND_SERVER_PASSWORD }}
-          envs: GITHUB_TOKEN,DATABASE_URL,JWT_SECRET
+
+          envs: GHCR_TOKEN,DATABASE_URL,JWT_SECRET
+
           script: |
-            echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ${{ env.IMAGE_NAME }}:latest
+            set -e
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io \
+              -u "${{ github.actor }}" \
+              --password-stdin
+
+            docker pull "${{ env.IMAGE_NAME }}:latest"
+
             docker stop my-app-container || true
             docker rm my-app-container || true
-            docker run -d --name my-app-container \
-              -e DATABASE_URL=$DATABASE_URL \
-              -e JWT_SECRET \
-              ${{ env.IMAGE_NAME }}:latest
-            docker image prune -af        
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BOT_TOKENDATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
+            docker run -d \
+              --name my-app-container \
+              --restart unless-stopped \
+              -p 127.0.0.1:8080:8080 \
+              -e DATABASE_URL="$DATABASE_URL" \
+              -e JWT_SECRET="$JWT_SECRET" \
+              "${{ env.IMAGE_NAME }}:latest"
+
+            docker image prune -af
