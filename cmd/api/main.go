@@ -86,6 +86,8 @@ func main() {
 		response.OK(c, "OK")
 	})
 
-	http.ListenAndServe(":80", router)
+	if err := router.Run(":8080"); err != nil {
+		log.Fatal(err)
+	}
 
 }

@@ -23,5 +23,7 @@ WORKDIR /root/
 # Копируем скомпилированный файл из этапа сборки
 COPY --from=builder /app/bot .
 
+EXPOSE 8080
+
 # Запускаем приложение
 CMD ["./bot"]
