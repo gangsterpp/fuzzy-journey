@@ -46,19 +46,18 @@ jobs:
           host: ${{ secrets.FINLAND_SERVER_HOST }}
           username: ${{ secrets.FINLAND_SERVER_USER }}
           password: ${{ secrets.FINLAND_SERVER_PASSWORD }}
-          envs: GITHUB_TOKEN,BOT_TOKEN,OPENROUTER_API_KEY
+          envs: GITHUB_TOKEN,DATABASE_URL,JWT_SECRET
           script: |
             echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ${{ env.IMAGE_NAME }}:latest
             docker stop my-app-container || true
             docker rm my-app-container || true
             docker run -d --name my-app-container \
-              -e TOKEN=$BOT_TOKEN \
-              -e OPENROUTER_API_KEY=$OPENROUTER_API_KEY \
+              -e DATABASE_URL=$DATABASE_URL \
+              -e JWT_SECRET \
               ${{ env.IMAGE_NAME }}:latest
-            docker image prune -af
-        # Блок env теперь находится на правильном уровне (вне with:)
+            docker image prune -af        
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          BOT_TOKENDATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
