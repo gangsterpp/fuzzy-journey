@@ -86,4 +86,6 @@ func main() {
 		response.OK(c, "OK")
 	})
 
+	router.Run()
+
 }
