@@ -79,4 +79,8 @@ jobs:
               -e GIN_MODE=release \
               "${{ env.IMAGE_NAME }}:latest"
 
+            sleep 3
+
+            curl --fail http://127.0.0.1:8080/healthz
+
             docker image prune -af
