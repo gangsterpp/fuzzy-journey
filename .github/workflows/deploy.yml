@@ -76,6 +76,7 @@ jobs:
               -p 127.0.0.1:8080:8080 \
               -e DATABASE_URL="$DATABASE_URL" \
               -e JWT_SECRET="$JWT_SECRET" \
+              -e GIN_MODE=release \
               "${{ env.IMAGE_NAME }}:latest"
 
             docker image prune -af
