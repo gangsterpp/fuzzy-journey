@@ -21,7 +21,7 @@ type Handler struct {
 func (h *Handler) Login(c *gin.Context) {
 
 	var auth AuthModel
-	if err := c.ShouldBind(auth); err != nil {
+	if err := c.ShouldBind(&auth); err != nil {
 		response.Fail(
 			c,
 			http.StatusBadRequest,
@@ -52,7 +52,7 @@ func (h *Handler) Login(c *gin.Context) {
 
 func (h *Handler) Register(c *gin.Context) {
 	var auth AuthModel
-	if err := c.ShouldBind(auth); err != nil {
+	if err := c.ShouldBind(&auth); err != nil {
 		response.Fail(
 			c,
 			http.StatusBadRequest,
