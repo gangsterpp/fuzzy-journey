@@ -34,7 +34,12 @@ func main() {
 		15*time.Minute,
 	)
 
-	db := database.NewPgPool(ctx, databaseURL)
+	db, err := database.NewPgPool(ctx, databaseURL)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	router := gin.Default()
 
